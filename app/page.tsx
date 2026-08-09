@@ -5,6 +5,8 @@ import { FormEvent, useEffect, useState } from "react";
 const AUTH_SESSION_KEY = "mcst-hosa-member-access-v1";
 const PASSWORD_HASH =
   "9abe242e9d8ef9b21d55361c22bde044c9f69068c08ab2ae3008498cb275b994";
+const EVENTS_CALENDAR_ID =
+  "556a00d0fa11632e307277b8e0c391352da030c1660e942fc61cd5da57da5794@group.calendar.google.com";
 
 type Tab = "home" | "events" | "members" | "alumni" | "resources";
 
@@ -134,7 +136,7 @@ function MemberSite() {
       </header>
 
       {activeTab === "home" && <HomePanel onExplore={() => selectTab("resources")} />}
-      {activeTab === "events" && <ComingSoon title="Events" copy="We’re preparing this year’s meeting, service, and competition calendar." />}
+      {activeTab === "events" && <EventsPanel />}
       {activeTab === "members" && <ComingSoon title="Club Members" copy="Our member and leadership directory is being thoughtfully assembled." />}
       {activeTab === "alumni" && <AlumniPanel />}
       {activeTab === "resources" && <ResourcesPanel />}
@@ -183,6 +185,57 @@ function HomePanel({ onExplore }: { onExplore: () => void }) {
 
 function ComingSoon({ title, copy }: { title: string; copy: string }) {
   return <section className="coming-page"><div className="coming-art"><span>+</span><div>⌁</div><span>+</span></div><p className="eyebrow">MCST HOSA</p><h1>{title}</h1><div className="status-chip"><i /> Under construction</div><p>{copy}<br />Check back soon for updates.</p></section>;
+}
+
+function EventsPanel() {
+  const [isLoading, setIsLoading] = useState(true);
+  const today = new Date();
+  const sixMonthsFromToday = new Date(today);
+  sixMonthsFromToday.setMonth(sixMonthsFromToday.getMonth() + 6);
+
+  const formatCalendarDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}${month}${day}`;
+  };
+
+  const calendarUrl = new URL("https://calendar.google.com/calendar/embed");
+  calendarUrl.search = new URLSearchParams({
+    src: EVENTS_CALENDAR_ID,
+    ctz: "America/New_York",
+    mode: "AGENDA",
+    dates: `${formatCalendarDate(today)}/${formatCalendarDate(sixMonthsFromToday)}`,
+    showTitle: "0",
+    showNav: "0",
+    showPrint: "0",
+    showTabs: "0",
+    showCalendars: "0",
+    showTz: "0",
+  }).toString();
+
+  const publicCalendarUrl = `https://calendar.google.com/calendar/u/0?cid=${encodeURIComponent(EVENTS_CALENDAR_ID)}`;
+
+  return <section className="inner-page events-page">
+    <div className="events-heading">
+      <div className="page-heading">
+        <p className="eyebrow">PLAN AHEAD</p>
+        <h1>Upcoming events</h1>
+        <p>Meetings, service opportunities, deadlines, and competitions scheduled for the next six months.</p>
+      </div>
+      <a className="calendar-link" href={publicCalendarUrl} target="_blank" rel="noreferrer">Open in Google Calendar ↗</a>
+    </div>
+    <div className="calendar-wrap">
+      {isLoading && <div className="calendar-loading" role="status"><span /><p>Loading upcoming events…</p></div>}
+      <iframe
+        className={isLoading ? "calendar-frame is-loading" : "calendar-frame"}
+        src={calendarUrl.toString()}
+        title="MCST HOSA events for the next six months"
+        onLoad={() => setIsLoading(false)}
+      />
+    </div>
+    <div className="sync-note"><span>↻</span><div><strong>Synced with Google Calendar</strong><p>Events appear in chronological order and update automatically when the shared calendar changes.</p></div></div>
+  </section>;
 }
 
 function AlumniPanel() {
