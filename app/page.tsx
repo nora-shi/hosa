@@ -1,6 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
+
+const AUTH_SESSION_KEY = "mcst-hosa-member-access-v1";
+const PASSWORD_HASH =
+  "9abe242e9d8ef9b21d55361c22bde044c9f69068c08ab2ae3008498cb275b994";
 
 type Tab = "home" | "events" | "members" | "alumni" | "resources";
 
@@ -13,6 +17,79 @@ const tabs: { id: Tab; label: string }[] = [
 ];
 
 export default function Home() {
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    () => sessionStorage.getItem(AUTH_SESSION_KEY) === "granted",
+  );
+
+  if (!isAuthenticated) {
+    return <PasswordGate onUnlock={() => setIsAuthenticated(true)} />;
+  }
+
+  return <MemberSite />;
+}
+
+function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isChecking, setIsChecking] = useState(false);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setIsChecking(true);
+    setError("");
+
+    const passwordBytes = new TextEncoder().encode(password);
+    const digest = await crypto.subtle.digest("SHA-256", passwordBytes);
+    const submittedHash = Array.from(new Uint8Array(digest))
+      .map((byte) => byte.toString(16).padStart(2, "0"))
+      .join("");
+
+    if (submittedHash === PASSWORD_HASH) {
+      sessionStorage.setItem(AUTH_SESSION_KEY, "granted");
+      onUnlock();
+      return;
+    }
+
+    setError("That password is not correct. Please try again.");
+    setPassword("");
+    setIsChecking(false);
+  }
+
+  return (
+    <main className="login-page">
+      <section className="login-card" aria-labelledby="login-title">
+        <div className="login-brand">
+          <span className="brand-mark" aria-hidden="true">H</span>
+          <span><strong>MCST HOSA</strong><small>Future Health Professionals</small></span>
+        </div>
+        <p className="eyebrow">MEMBERS ONLY</p>
+        <h1 id="login-title">Welcome back.</h1>
+        <p className="login-copy">Enter the shared club password to access the MCST HOSA member site.</p>
+        <form onSubmit={handleSubmit}>
+          <label htmlFor="member-password">Club password</label>
+          <input
+            id="member-password"
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            autoComplete="current-password"
+            required
+            aria-invalid={Boolean(error)}
+            aria-describedby={error ? "password-error" : "session-note"}
+          />
+          {error && <p className="login-error" id="password-error" role="alert">{error}</p>}
+          <button className="login-submit" type="submit" disabled={isChecking}>
+            {isChecking ? "Checking…" : "Enter member site →"}
+          </button>
+        </form>
+        <p className="session-note" id="session-note">You’ll stay signed in until this browser tab or window is closed.</p>
+      </section>
+      <div className="login-accent" aria-hidden="true"><span>+</span><div>⌁</div><span>+</span></div>
+    </main>
+  );
+}
+
+function MemberSite() {
   const [activeTab, setActiveTab] = useState<Tab>(() => {
     const requestedTab = window.location.hash.slice(1) as Tab;
     return tabs.some((tab) => tab.id === requestedTab) ? requestedTab : "home";
