@@ -12,9 +12,6 @@ const tabs: { id: Tab; label: string }[] = [
   { id: "resources", label: "Resources" },
 ];
 
-const sheetUrl =
-  "https://docs.google.com/spreadsheets/d/1QA51CrINL1XTkOrbYAnQBui0_c7AdjQxLwim8qlXzcs/edit";
-
 export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>("home");
   const currentLabel = tabs.find((tab) => tab.id === activeTab)?.label ?? "Home";
@@ -118,7 +115,6 @@ function AlumniPanel() {
   return <section className="inner-page alumni-page">
     <div className="page-heading"><p className="eyebrow">STAY CONNECTED</p><h1>Our alumni network</h1><p>Connect with former MCST HOSA members, learn from their journeys, and keep our chapter community growing.</p></div>
     <div className="directory-wrap">
-      <div className="sheet-bar"><div><span className="live-dot" /> <strong>Alumni contact directory</strong><small>Live information from Google Sheets</small></div><a href={sheetUrl} target="_blank" rel="noreferrer">View source sheet ↗</a></div>
       {!directory && !error && <div className="directory-loading"><span /><p>Loading the latest alumni contacts…</p></div>}
       {error && <div className="directory-error"><strong>Directory temporarily unavailable</strong><p>The Google Sheet must be shared as “Anyone with the link — Viewer” before public contacts can appear here.</p></div>}
       {directory && directory.rows.length === 0 && <div className="directory-empty"><strong>No contacts yet</strong><p>New alumni contacts will appear here automatically when they are added to the sheet.</p></div>}
