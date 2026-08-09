@@ -6,7 +6,7 @@ const AUTH_SESSION_KEY = "mcst-hosa-member-access-v1";
 const PASSWORD_HASH =
   "9abe242e9d8ef9b21d55361c22bde044c9f69068c08ab2ae3008498cb275b994";
 const EVENTS_CALENDAR_ID =
-  "556a00d0fa11632e307277b8e0c391352da030c1660e942fc61cd5da57da5794@group.calendar.google.com";
+  "c_fad55e44ee8f140abddae601d7203a16c84b0a9fb91e9b5b8ef9334ec5bed591@group.calendar.google.com";
 
 type Tab = "home" | "events" | "members" | "alumni" | "resources";
 
@@ -189,23 +189,11 @@ function ComingSoon({ title, copy }: { title: string; copy: string }) {
 
 function EventsPanel() {
   const [isLoading, setIsLoading] = useState(true);
-  const today = new Date();
-  const sixMonthsFromToday = new Date(today);
-  sixMonthsFromToday.setMonth(sixMonthsFromToday.getMonth() + 6);
-
-  const formatCalendarDate = (date: Date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}${month}${day}`;
-  };
-
   const calendarUrl = new URL("https://calendar.google.com/calendar/embed");
   calendarUrl.search = new URLSearchParams({
     src: EVENTS_CALENDAR_ID,
     ctz: "America/New_York",
     mode: "AGENDA",
-    dates: `${formatCalendarDate(today)}/${formatCalendarDate(sixMonthsFromToday)}`,
     showTitle: "0",
     showNav: "0",
     showPrint: "0",
