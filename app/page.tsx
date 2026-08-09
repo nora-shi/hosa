@@ -13,8 +13,20 @@ const tabs: { id: Tab; label: string }[] = [
 ];
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<Tab>("home");
+  const [activeTab, setActiveTab] = useState<Tab>(() => {
+    const requestedTab = window.location.hash.slice(1) as Tab;
+    return tabs.some((tab) => tab.id === requestedTab) ? requestedTab : "home";
+  });
   const currentLabel = tabs.find((tab) => tab.id === activeTab)?.label ?? "Home";
+
+  useEffect(() => {
+    const syncTabFromUrl = () => {
+      const requestedTab = window.location.hash.slice(1) as Tab;
+      if (tabs.some((tab) => tab.id === requestedTab)) setActiveTab(requestedTab);
+    };
+    window.addEventListener("hashchange", syncTabFromUrl);
+    return () => window.removeEventListener("hashchange", syncTabFromUrl);
+  }, []);
 
   function selectTab(tab: Tab) {
     setActiveTab(tab);
@@ -102,14 +114,38 @@ function AlumniPanel() {
 
   useEffect(() => {
     let active = true;
-    fetch("/api/alumni", { cache: "no-store" })
-      .then((response) => {
-        if (!response.ok) throw new Error("Directory unavailable");
-        return response.json();
-      })
-      .then((data) => { if (active) setDirectory(data); })
-      .catch(() => { if (active) setError(true); });
-    return () => { active = false; };
+    const callbackName = `mcstHosaAlumni_${Date.now()}`;
+    const script = document.createElement("script");
+    const callbacks = window as typeof window & Record<string, (response: GoogleSheetResponse) => void>;
+
+    callbacks[callbackName] = (response) => {
+      if (!active) return;
+      if (response.status === "error" || !response.table) {
+        setError(true);
+      } else {
+        const headers = response.table.cols.map((column, index) => column.label?.trim() || `Column ${index + 1}`);
+        const rows = response.table.rows
+          .map((row) => headers.map((_, index) => {
+            const cell = row.c[index];
+            return cell?.f ?? (cell?.v == null ? "" : String(cell.v));
+          }))
+          .filter((row) => row.some(Boolean));
+        setDirectory({ headers, rows });
+      }
+      script.remove();
+      delete callbacks[callbackName];
+    };
+
+    script.src = `https://docs.google.com/spreadsheets/d/1QA51CrINL1XTkOrbYAnQBui0_c7AdjQxLwim8qlXzcs/gviz/tq?tqx=out:json;responseHandler:${callbackName}&headers=1`;
+    script.async = true;
+    script.onerror = () => { if (active) setError(true); };
+    document.body.appendChild(script);
+
+    return () => {
+      active = false;
+      script.remove();
+      delete callbacks[callbackName];
+    };
   }, []);
 
   return <section className="inner-page alumni-page">
@@ -123,6 +159,14 @@ function AlumniPanel() {
     <div className="sync-note"><span>↻</span><div><strong>Always up to date</strong><p>Changes made in the linked Google Sheet are reflected here automatically when this page is refreshed.</p></div></div>
   </section>;
 }
+
+type GoogleSheetResponse = {
+  status: string;
+  table?: {
+    cols: { label?: string }[];
+    rows: { c: ({ v?: unknown; f?: string } | null)[] }[];
+  };
+};
 
 function formatContact(value: string, header: string) {
   if (!value) return <span className="empty-value">—</span>;
