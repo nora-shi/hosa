@@ -123,13 +123,18 @@ function AlumniPanel() {
       if (response.status === "error" || !response.table) {
         setError(true);
       } else {
-        const headers = response.table.cols.map((column, index) => column.label?.trim() || `Column ${index + 1}`);
-        const rows = response.table.rows
-          .map((row) => headers.map((_, index) => {
+        const allHeaders = response.table.cols.map((column, index) => column.label?.trim() || `Column ${index + 1}`);
+        const allRows = response.table.rows
+          .map((row) => allHeaders.map((_, index) => {
             const cell = row.c[index];
             return cell?.f ?? (cell?.v == null ? "" : String(cell.v));
           }))
           .filter((row) => row.some(Boolean));
+        const populatedColumns = allHeaders
+          .map((_, index) => index)
+          .filter((index) => allRows.some((row) => row[index]?.trim()));
+        const headers = populatedColumns.map((index) => allHeaders[index]);
+        const rows = allRows.map((row) => populatedColumns.map((index) => row[index]));
         setDirectory({ headers, rows });
       }
       script.remove();
