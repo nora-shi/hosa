@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type Tab = "home" | "events" | "members" | "alumni" | "resources";
 
@@ -12,8 +12,8 @@ const tabs: { id: Tab; label: string }[] = [
   { id: "resources", label: "Resources" },
 ];
 
-const sheetPreview =
-  "https://docs.google.com/spreadsheets/d/1QA51CrINL1XTkOrbYAnQBui0_c7AdjQxLwim8qlXzcs/preview?rm=minimal";
+const sheetUrl =
+  "https://docs.google.com/spreadsheets/d/1QA51CrINL1XTkOrbYAnQBui0_c7AdjQxLwim8qlXzcs/edit";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>("home");
@@ -100,14 +100,41 @@ function ComingSoon({ title, copy }: { title: string; copy: string }) {
 }
 
 function AlumniPanel() {
+  const [directory, setDirectory] = useState<{ headers: string[]; rows: string[][] } | null>(null);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/alumni", { cache: "no-store" })
+      .then((response) => {
+        if (!response.ok) throw new Error("Directory unavailable");
+        return response.json();
+      })
+      .then((data) => { if (active) setDirectory(data); })
+      .catch(() => { if (active) setError(true); });
+    return () => { active = false; };
+  }, []);
+
   return <section className="inner-page alumni-page">
     <div className="page-heading"><p className="eyebrow">STAY CONNECTED</p><h1>Our alumni network</h1><p>Connect with former MCST HOSA members, learn from their journeys, and keep our chapter community growing.</p></div>
-    <div className="sheet-wrap">
-      <div className="sheet-bar"><div><span className="live-dot" /> <strong>Alumni directory</strong><small>Updates automatically from Google Sheets</small></div><a href={sheetPreview} target="_blank" rel="noreferrer">Open full sheet ↗</a></div>
-      <iframe title="MCST HOSA alumni contact directory" src={sheetPreview} loading="lazy" />
+    <div className="directory-wrap">
+      <div className="sheet-bar"><div><span className="live-dot" /> <strong>Alumni contact directory</strong><small>Live information from Google Sheets</small></div><a href={sheetUrl} target="_blank" rel="noreferrer">View source sheet ↗</a></div>
+      {!directory && !error && <div className="directory-loading"><span /><p>Loading the latest alumni contacts…</p></div>}
+      {error && <div className="directory-error"><strong>Directory temporarily unavailable</strong><p>The Google Sheet must be shared as “Anyone with the link — Viewer” before public contacts can appear here.</p></div>}
+      {directory && directory.rows.length === 0 && <div className="directory-empty"><strong>No contacts yet</strong><p>New alumni contacts will appear here automatically when they are added to the sheet.</p></div>}
+      {directory && directory.rows.length > 0 && <div className="directory-table-scroll"><table className="directory-table"><thead><tr>{directory.headers.map((header) => <th key={header}>{header}</th>)}</tr></thead><tbody>{directory.rows.map((row, rowIndex) => <tr key={rowIndex}>{directory.headers.map((header, index) => <td key={`${header}-${index}`}>{formatContact(row[index] ?? "", header)}</td>)}</tr>)}</tbody></table></div>}
     </div>
-    <div className="privacy-note"><strong>Privacy note</strong><p>This directory should contain only information alumni have agreed to share. If the sheet is not visible, its owner must set the file’s General access to “Anyone with the link — Viewer.” Never publish private student data.</p></div>
+    <div className="sync-note"><span>↻</span><div><strong>Always up to date</strong><p>Changes made in the linked Google Sheet are reflected here automatically when this page is refreshed.</p></div></div>
   </section>;
+}
+
+function formatContact(value: string, header: string) {
+  if (!value) return <span className="empty-value">—</span>;
+  const normalizedHeader = header.toLowerCase();
+  if (normalizedHeader.includes("email") || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return <a href={`mailto:${value}`}>{value}</a>;
+  if (normalizedHeader.includes("phone")) return <a href={`tel:${value.replace(/[^+\d]/g, "")}`}>{value}</a>;
+  if (/^https?:\/\//i.test(value)) return <a href={value} target="_blank" rel="noreferrer">View profile ↗</a>;
+  return value;
 }
 
 const links = [
