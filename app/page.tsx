@@ -222,7 +222,6 @@ function EventsPanel() {
         onLoad={() => setIsLoading(false)}
       />
     </div>
-    <div className="sync-note"><span>↻</span><div><strong>Synced with Google Calendar</strong><p>Events appear in chronological order and update automatically when the shared calendar changes.</p></div></div>
   </section>;
 }
 
