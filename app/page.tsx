@@ -139,7 +139,7 @@ function MemberSite() {
       {activeTab === "home" && <HomePanel onExplore={() => selectTab("resources")} />}
       {activeTab === "events" && <EventsPanel />}
       {activeTab === "members" && <ComingSoon title="Club Members" copy="Our member and leadership directory is being thoughtfully assembled." />}
-      {activeTab === "advisory" && <section className="blank-page" aria-label="Advisory Board" />}
+      {activeTab === "advisory" && <AdvisoryBoardPanel />}
       {activeTab === "alumni" && <AlumniPanel />}
       {activeTab === "resources" && <ResourcesPanel />}
 
@@ -282,6 +282,103 @@ function AlumniPanel() {
     </div>
     <div className="sync-note"><span>↻</span><div><strong>Always up to date</strong><p>Changes made in the linked Google Sheet are reflected here automatically when this page is refreshed.</p></div></div>
   </section>;
+}
+
+type Advisor = {
+  name: string;
+  photo: string;
+  role: string;
+  position: number | null;
+};
+
+function AdvisoryBoardPanel() {
+  const [advisors, setAdvisors] = useState<Advisor[] | null>(null);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const callbackName = `mcstHosaAdvisors_${Date.now()}`;
+    const script = document.createElement("script");
+    const callbacks = window as typeof window & Record<string, (response: GoogleSheetResponse) => void>;
+
+    callbacks[callbackName] = (response) => {
+      if (!active) return;
+      if (response.status === "error" || !response.table) {
+        setError(true);
+      } else {
+        const headers = response.table.cols.map((column) => column.label?.trim().toLowerCase() ?? "");
+        const nameIndex = headers.indexOf("name");
+        const photoIndex = headers.indexOf("photo");
+        const roleIndex = headers.indexOf("role");
+        const positionIndex = headers.findIndex((header) => header === "position" || header === "postion");
+
+        if (nameIndex < 0 || photoIndex < 0 || roleIndex < 0 || positionIndex < 0) {
+          setError(true);
+        } else {
+          const getValue = (row: { c: ({ v?: unknown; f?: string } | null)[] }, index: number) => row.c[index]?.v;
+          setAdvisors(response.table.rows
+            .map((row) => {
+              const rawPosition = getValue(row, positionIndex);
+              const parsedPosition = Number(rawPosition);
+              return {
+                name: String(getValue(row, nameIndex) ?? "").trim(),
+                photo: normalizePhotoUrl(String(getValue(row, photoIndex) ?? "").trim()),
+                role: String(getValue(row, roleIndex) ?? "").trim(),
+                position: rawPosition == null || rawPosition === "" || !Number.isFinite(parsedPosition) ? null : parsedPosition,
+              };
+            })
+            .filter((advisor) => advisor.name));
+        }
+      }
+      script.remove();
+      delete callbacks[callbackName];
+    };
+
+    script.src = `https://docs.google.com/spreadsheets/d/1MkEXKsrV73m2xnASi0JsjFSleYDDhORZg0aF8A9HcOw/gviz/tq?tqx=out:json;responseHandler:${callbackName}&headers=1`;
+    script.async = true;
+    script.onerror = () => { if (active) setError(true); };
+    document.body.appendChild(script);
+
+    return () => {
+      active = false;
+      script.remove();
+      delete callbacks[callbackName];
+    };
+  }, []);
+
+  const firstRow = advisors?.filter((advisor) => advisor.position === 1 || advisor.position === 2).sort((a, b) => (a.position ?? 0) - (b.position ?? 0)) ?? [];
+  const secondRow = advisors?.filter((advisor) => advisor.position != null && advisor.position >= 3 && advisor.position <= 5).sort((a, b) => (a.position ?? 0) - (b.position ?? 0)) ?? [];
+  const remaining = advisors?.filter((advisor) => advisor.position == null || advisor.position < 1 || advisor.position > 5) ?? [];
+
+  return <section className="inner-page advisory-page">
+    <div className="page-heading"><p className="eyebrow">GUIDANCE &amp; LEADERSHIP</p><h1>Advisory Board</h1><p>Meet the advisors and student leaders supporting MCST HOSA ENGAGE.</p></div>
+    {!advisors && !error && <div className="advisor-status" role="status"><span /><p>Loading the advisory board…</p></div>}
+    {error && <div className="advisor-status advisor-error"><strong>Advisory Board temporarily unavailable</strong><p>Make sure the Google Sheet is shared as “Anyone with the link — Viewer” and includes Name, Photo, Role, and Position columns.</p></div>}
+    {advisors?.length === 0 && <div className="advisor-status advisor-empty"><strong>No board members yet</strong><p>Advisory Board members will appear here automatically when they are added to the sheet.</p></div>}
+    {advisors && advisors.length > 0 && <div className="advisor-directory">
+      {firstRow.length > 0 && <div className="advisor-row advisor-row-featured">{firstRow.map((advisor) => <AdvisorCard advisor={advisor} key={`${advisor.position}-${advisor.name}`} />)}</div>}
+      {secondRow.length > 0 && <div className="advisor-row advisor-row-leadership">{secondRow.map((advisor) => <AdvisorCard advisor={advisor} key={`${advisor.position}-${advisor.name}`} />)}</div>}
+      {remaining.length > 0 && <div className="advisor-row advisor-row-members">{remaining.map((advisor, index) => <AdvisorCard advisor={advisor} key={`${advisor.name}-${index}`} />)}</div>}
+    </div>}
+  </section>;
+}
+
+function AdvisorCard({ advisor }: { advisor: Advisor }) {
+  const [photoFailed, setPhotoFailed] = useState(false);
+  const showPhoto = advisor.photo && !photoFailed;
+
+  return <article className="advisor-card">
+    <div className="advisor-photo">
+      {showPhoto ? <img src={advisor.photo} alt={`Portrait of ${advisor.name}`} onError={() => setPhotoFailed(true)} /> : <span>Missing Photo</span>}
+    </div>
+    <div className="advisor-details"><h2>{advisor.name}</h2><p>{advisor.role || "Advisory Board Member"}</p></div>
+  </article>;
+}
+
+function normalizePhotoUrl(value: string) {
+  if (!value) return "";
+  if (/^https?:\/\//i.test(value)) return value;
+  return `https://${value.replace(/^\/+/, "")}`;
 }
 
 type GoogleSheetResponse = {
