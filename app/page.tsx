@@ -301,15 +301,70 @@ function formatContact(value: string, header: string) {
   return value;
 }
 
-const links = [
-  ["HOSA–Future Health Professionals", "Official organization website", "https://hosa.org"],
-  ["Competitive Event Guidelines", "Current event rules, rubrics, and resources", "https://hosa.org/guidelines/"],
-  ["Competition Overview", "How HOSA competitive events work", "https://hosa.org/competition/"],
-  ["Competitive Event FAQ", "Answers about tests, resources, and preparation", "https://hosa.org/faq/"],
-  ["New Jersey HOSA", "State conferences, announcements, and opportunities", "https://www.njhosa.org/"],
-  ["MCST Website", "School news, programs, and student resources", "https://www.mcvts.org/"],
-];
-
 function ResourcesPanel() {
-  return <section className="inner-page resources-page"><div className="page-heading"><p className="eyebrow">TOOLS FOR SUCCESS</p><h1>Resources</h1><p>Official guidance and useful starting points for learning, preparing, and competing.</p></div><div className="resource-grid">{links.map(([name, desc, url], index) => <a className="resource-card" href={url} target="_blank" rel="noreferrer" key={name}><span className="resource-num">{String(index + 1).padStart(2, "0")}</span><div><h2>{name}</h2><p>{desc}</p></div><span className="resource-arrow">↗</span></a>)}</div><div className="tip"><strong>Competition tip</strong><p>Always use the current year’s official event guideline. Requirements and test plans may change from year to year.</p></div></section>;
+  const [resources, setResources] = useState<{ name: string; description: string; url: string }[] | null>(null);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const callbackName = `mcstHosaResources_${Date.now()}`;
+    const script = document.createElement("script");
+    const callbacks = window as typeof window & Record<string, (response: GoogleSheetResponse) => void>;
+
+    callbacks[callbackName] = (response) => {
+      if (!active) return;
+      if (response.status === "error" || !response.table) {
+        setError(true);
+      } else {
+        const headers = response.table.cols.map((column) => column.label?.trim().toLowerCase() ?? "");
+        const nameIndex = headers.indexOf("study resources");
+        const linkIndex = headers.indexOf("link");
+        const descriptionIndex = headers.indexOf("description");
+
+        if (nameIndex < 0 || linkIndex < 0 || descriptionIndex < 0) {
+          setError(true);
+        } else {
+          const getCell = (row: { c: ({ v?: unknown; f?: string } | null)[] }, index: number) => {
+            const cell = row.c[index];
+            return (cell?.f ?? (cell?.v == null ? "" : String(cell.v))).trim();
+          };
+          setResources(response.table.rows
+            .map((row) => ({
+              name: getCell(row, nameIndex),
+              url: normalizeResourceUrl(getCell(row, linkIndex)),
+              description: getCell(row, descriptionIndex),
+            }))
+            .filter((resource) => resource.name && resource.url));
+        }
+      }
+      script.remove();
+      delete callbacks[callbackName];
+    };
+
+    script.src = `https://docs.google.com/spreadsheets/d/1qscRNZMh6eY13Vmi7iBGFbqG7OQ2D1xa6UbU7cRpKcQ/gviz/tq?tqx=out:json;responseHandler:${callbackName}&headers=1`;
+    script.async = true;
+    script.onerror = () => { if (active) setError(true); };
+    document.body.appendChild(script);
+
+    return () => {
+      active = false;
+      script.remove();
+      delete callbacks[callbackName];
+    };
+  }, []);
+
+  return <section className="inner-page resources-page">
+    <div className="page-heading"><p className="eyebrow">TOOLS FOR SUCCESS</p><h1>Resources</h1><p>Official guidance and useful starting points for learning, preparing, and competing.</p></div>
+    {!resources && !error && <div className="resource-status" role="status"><span /><p>Loading the latest study resources…</p></div>}
+    {error && <div className="resource-status resource-error"><strong>Resources temporarily unavailable</strong><p>Make sure the Google Sheet is shared as “Anyone with the link — Viewer” and includes the Study Resources, Link, and Description columns.</p></div>}
+    {resources?.length === 0 && <div className="resource-status resource-empty"><strong>No resources yet</strong><p>New study resources will appear here automatically when they are added to the sheet.</p></div>}
+    {resources && resources.length > 0 && <div className="resource-grid">{resources.map(({ name, description, url }, index) => <a className="resource-card" href={url} target="_blank" rel="noreferrer" key={`${name}-${index}`}><span className="resource-num">{String(index + 1).padStart(2, "0")}</span><div><h2>{name}</h2><p>{description}</p></div><span className="resource-arrow">↗</span></a>)}</div>}
+    <div className="tip"><strong>Competition tip</strong><p>Always use the current year’s official event guideline. Requirements and test plans may change from year to year.</p></div>
+  </section>;
+}
+
+function normalizeResourceUrl(value: string) {
+  if (!value) return "";
+  if (/^https?:\/\//i.test(value)) return value;
+  return `https://${value.replace(/^\/+/, "")}`;
 }
