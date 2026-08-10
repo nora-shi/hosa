@@ -8,12 +8,13 @@ const PASSWORD_HASH =
 const EVENTS_CALENDAR_ID =
   "c_fad55e44ee8f140abddae601d7203a16c84b0a9fb91e9b5b8ef9334ec5bed591@group.calendar.google.com";
 
-type Tab = "home" | "events" | "members" | "alumni" | "resources";
+type Tab = "home" | "events" | "members" | "advisory" | "alumni" | "resources";
 
 const tabs: { id: Tab; label: string }[] = [
   { id: "home", label: "Home" },
   { id: "events", label: "Events" },
   { id: "members", label: "Club Members" },
+  { id: "advisory", label: "Advisory Board" },
   { id: "alumni", label: "Alumni" },
   { id: "resources", label: "Resources" },
 ];
@@ -138,6 +139,7 @@ function MemberSite() {
       {activeTab === "home" && <HomePanel onExplore={() => selectTab("resources")} />}
       {activeTab === "events" && <EventsPanel />}
       {activeTab === "members" && <ComingSoon title="Club Members" copy="Our member and leadership directory is being thoughtfully assembled." />}
+      {activeTab === "advisory" && <section className="blank-page" aria-label="Advisory Board" />}
       {activeTab === "alumni" && <AlumniPanel />}
       {activeTab === "resources" && <ResourcesPanel />}
 
