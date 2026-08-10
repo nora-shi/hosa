@@ -13,11 +13,11 @@ export async function generateMetadata(): Promise<Metadata> {
   const image = `${protocol}://${host}/og.png`;
   const description = "The official home of the Morris County School of Technology HOSA chapter.";
   return {
-    title: "MCST HOSA | Future Health Professionals",
+    title: "MCST HOSA ENGAGE | Future Health Professionals",
     description,
     icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
-    openGraph: { title: "MCST HOSA", description, images: [{ url: image, width: 1200, height: 630 }] },
-    twitter: { card: "summary_large_image", title: "MCST HOSA", description, images: [image] },
+    openGraph: { title: "MCST HOSA ENGAGE", description, images: [{ url: image, width: 1200, height: 630 }] },
+    twitter: { card: "summary_large_image", title: "MCST HOSA ENGAGE", description, images: [image] },
   };
 }
 

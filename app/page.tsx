@@ -63,11 +63,11 @@ function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
       <section className="login-card" aria-labelledby="login-title">
         <div className="login-brand">
           <span className="brand-mark" aria-hidden="true">H</span>
-          <span><strong>MCST HOSA</strong><small>Future Health Professionals</small></span>
+          <span><strong>MCST HOSA ENGAGE</strong><small>Future Health Professionals</small></span>
         </div>
         <p className="eyebrow">MEMBERS ONLY</p>
         <h1 id="login-title">Welcome back.</h1>
-        <p className="login-copy">Enter the shared club password to access the MCST HOSA member site.</p>
+        <p className="login-copy">Enter the shared club password to access the MCST HOSA ENGAGE member site.</p>
         <form onSubmit={handleSubmit}>
           <label htmlFor="member-password">Club password</label>
           <input
@@ -117,9 +117,9 @@ function MemberSite() {
   return (
     <main>
       <header className="site-header">
-        <button className="brand" onClick={() => selectTab("home")} aria-label="MCST HOSA home">
+        <button className="brand" onClick={() => selectTab("home")} aria-label="MCST HOSA ENGAGE home">
           <span className="brand-mark" aria-hidden="true">H</span>
-          <span><strong>MCST HOSA</strong><small>Future Health Professionals</small></span>
+          <span><strong>MCST HOSA ENGAGE</strong><small>Future Health Professionals</small></span>
         </button>
         <nav aria-label="Main navigation">
           {tabs.map((tab) => (
@@ -144,9 +144,9 @@ function MemberSite() {
       {activeTab === "resources" && <ResourcesPanel />}
 
       <footer>
-        <div className="footer-brand"><span className="brand-mark small">H</span><span><strong>MCST HOSA</strong><small>Morris County School of Technology</small></span></div>
+        <div className="footer-brand"><span className="brand-mark small">H</span><span><strong>MCST HOSA ENGAGE</strong><small>Morris County School of Technology</small></span></div>
         <p>Empowering the next generation of health professionals.</p>
-        <p className="copyright">© {new Date().getFullYear()} MCST HOSA</p>
+        <p className="copyright">© {new Date().getFullYear()} MCST HOSA ENGAGE</p>
       </footer>
     </main>
   );
@@ -186,7 +186,7 @@ function HomePanel({ onExplore }: { onExplore: () => void }) {
 }
 
 function ComingSoon({ title, copy }: { title: string; copy: string }) {
-  return <section className="coming-page"><div className="coming-art"><span>+</span><div>⌁</div><span>+</span></div><p className="eyebrow">MCST HOSA</p><h1>{title}</h1><div className="status-chip"><i /> Under construction</div><p>{copy}<br />Check back soon for updates.</p></section>;
+  return <section className="coming-page"><div className="coming-art"><span>+</span><div>⌁</div><span>+</span></div><p className="eyebrow">MCST HOSA ENGAGE</p><h1>{title}</h1><div className="status-chip"><i /> Under construction</div><p>{copy}<br />Check back soon for updates.</p></section>;
 }
 
 function EventsPanel() {
@@ -220,7 +220,7 @@ function EventsPanel() {
       <iframe
         className={isLoading ? "calendar-frame is-loading" : "calendar-frame"}
         src={calendarUrl.toString()}
-        title="MCST HOSA events for the next six months"
+        title="MCST HOSA ENGAGE events for the next six months"
         onLoad={() => setIsLoading(false)}
       />
     </div>
@@ -273,7 +273,7 @@ function AlumniPanel() {
   }, []);
 
   return <section className="inner-page alumni-page">
-    <div className="page-heading"><p className="eyebrow">STAY CONNECTED</p><h1>Our alumni network</h1><p>Connect with former MCST HOSA members, learn from their journeys, and keep our chapter community growing.</p></div>
+    <div className="page-heading"><p className="eyebrow">STAY CONNECTED</p><h1>Our alumni network</h1><p>Connect with former MCST HOSA ENGAGE members, learn from their journeys, and keep our chapter community growing.</p></div>
     <div className="directory-wrap">
       {!directory && !error && <div className="directory-loading"><span /><p>Loading the latest alumni contacts…</p></div>}
       {error && <div className="directory-error"><strong>Directory temporarily unavailable</strong><p>The Google Sheet must be shared as “Anyone with the link — Viewer” before public contacts can appear here.</p></div>}
