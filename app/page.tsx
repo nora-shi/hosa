@@ -13,8 +13,8 @@ type Tab = "home" | "events" | "members" | "advisory" | "alumni" | "resources";
 const tabs: { id: Tab; label: string }[] = [
   { id: "home", label: "Home" },
   { id: "events", label: "Events" },
-  { id: "members", label: "Club Members" },
   { id: "advisory", label: "Advisory Board" },
+  { id: "members", label: "Club Members" },
   { id: "alumni", label: "Alumni" },
   { id: "resources", label: "Resources" },
 ];
@@ -191,10 +191,19 @@ function ComingSoon({ title, copy }: { title: string; copy: string }) {
 
 function EventsPanel() {
   const [isLoading, setIsLoading] = useState(true);
+  const rangeStart = new Date();
+  const rangeEnd = new Date(rangeStart);
+  rangeEnd.setMonth(rangeEnd.getMonth() + 6);
+  const formatCalendarDate = (date: Date) =>
+    `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}`;
+  const formatCalendarMonth = (date: Date) =>
+    date.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+  const calendarRangeLabel = `${formatCalendarMonth(rangeStart)} – ${formatCalendarMonth(rangeEnd)}`;
   const calendarUrl = new URL("https://calendar.google.com/calendar/embed");
   calendarUrl.search = new URLSearchParams({
     src: EVENTS_CALENDAR_ID,
     ctz: "America/New_York",
+    dates: `${formatCalendarDate(rangeStart)}/${formatCalendarDate(rangeEnd)}`,
     mode: "AGENDA",
     showTitle: "0",
     showNav: "0",
@@ -204,8 +213,6 @@ function EventsPanel() {
     showTz: "0",
   }).toString();
 
-  const publicCalendarUrl = `https://calendar.google.com/calendar/u/0?cid=${encodeURIComponent(EVENTS_CALENDAR_ID)}`;
-
   return <section className="inner-page events-page">
     <div className="events-heading">
       <div className="page-heading">
@@ -213,10 +220,10 @@ function EventsPanel() {
         <h1>Upcoming events</h1>
         <p>Meetings, service opportunities, deadlines, and competitions scheduled for the next six months.</p>
       </div>
-      <a className="calendar-link" href={publicCalendarUrl} target="_blank" rel="noreferrer">Open in Google Calendar ↗</a>
     </div>
     <div className="calendar-wrap">
       {isLoading && <div className="calendar-loading" role="status"><span /><p>Loading upcoming events…</p></div>}
+      {!isLoading && <div className="calendar-range-label">{calendarRangeLabel}</div>}
       <iframe
         className={isLoading ? "calendar-frame is-loading" : "calendar-frame"}
         src={calendarUrl.toString()}
@@ -280,7 +287,6 @@ function AlumniPanel() {
       {directory && directory.rows.length === 0 && <div className="directory-empty"><strong>No contacts yet</strong><p>New alumni contacts will appear here automatically when they are added to the sheet.</p></div>}
       {directory && directory.rows.length > 0 && <div className="directory-table-scroll"><table className="directory-table"><thead><tr>{directory.headers.map((header) => <th key={header}>{header}</th>)}</tr></thead><tbody>{directory.rows.map((row, rowIndex) => <tr key={rowIndex}>{directory.headers.map((header, index) => <td key={`${header}-${index}`}>{formatContact(row[index] ?? "", header)}</td>)}</tr>)}</tbody></table></div>}
     </div>
-    <div className="sync-note"><span>↻</span><div><strong>Always up to date</strong><p>Changes made in the linked Google Sheet are reflected here automatically when this page is refreshed.</p></div></div>
   </section>;
 }
 
