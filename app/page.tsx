@@ -374,9 +374,9 @@ function AdvisorCard({ advisor }: { advisor: Advisor }) {
   const showPhoto = advisor.photo && !photoFailed;
 
   return <article className="advisor-card">
-    <div className="advisor-photo">
-      {showPhoto ? <img src={advisor.photo} alt={`Portrait of ${advisor.name}`} onError={() => setPhotoFailed(true)} /> : <span>Missing Photo</span>}
-    </div>
+    {showPhoto && <div className="advisor-photo">
+      <img src={advisor.photo} alt={`Portrait of ${advisor.name}`} onError={() => setPhotoFailed(true)} />
+    </div>}
     <div className="advisor-details"><h2>{advisor.name}</h2><p>{advisor.role || "Advisory Board Member"}</p></div>
   </article>;
 }
